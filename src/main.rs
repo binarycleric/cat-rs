@@ -1,6 +1,6 @@
 use std::env;
 use std::path::Path;
-use std::io::prelude::*;
+use std::io::{self, Read};
 use std::fs::File;
 
 fn file_contents(mut f: File) -> String {
@@ -17,25 +17,42 @@ fn file_contents(mut f: File) -> String {
     return contents;
 }
 
+fn from_stdin() -> String {
+    let mut buffer = String::new();
+    
+    match io::stdin().read_to_string(&mut buffer) {
+        Ok(_) => {
+            return buffer; 
+        },
+        Err(error) => {
+            println!("{}", error);
+            std::process::exit(1);
+        },
+    }
+}
+
+fn from_file(p: String) -> String {
+    let path = Path::new(&p);
+    let file = File::open(path);
+
+    match file { 
+        Ok(f) => {
+            return file_contents(f);
+        },
+        Err(error) => {
+            println!("{}", error);
+            std::process::exit(1);
+        }
+    };
+}
+
 fn main() {
     match env::args().nth(1) {
         Some(p) => {
-            let path = Path::new(&p);
-            let file = File::open(path);
-
-            match file { 
-                Ok(f) => {
-                    println!("{}", file_contents(f));
-                },
-                Err(error) => {
-                    println!("{}", error);
-                    std::process::exit(1);
-                }
-            };
+            println!("{}", from_file(p));
         },
         None => {
-            println!("Usage: cat [path-to-file]");
-            std::process::exit(1);
+            println!("{}", from_stdin()); 
         }
     };
 }
